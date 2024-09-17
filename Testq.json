@@ -1,0 +1,21 @@
+{
+    "name": "Testq",
+    "tables": {
+        "Mq": {
+            "schema": {
+                "id": "integer",
+                "salary": "real",
+                "name": "string",
+                "worked": "date"
+            },
+            "rows": [
+                [
+                    1,
+                    500.15,
+                    "John Doe",
+                    "1985-05-20"
+                ]
+            ]
+        }
+    }
+}

@@ -1,0 +1,48 @@
+{
+    "name": "Base1",
+    "tables": {
+        "Table1": {
+            "schema": {
+                "id": "integer",
+                "salary": "real",
+                "name": "string",
+                "worked": "date"
+            },
+            "rows": [
+                [
+                    1,
+                    14.88,
+                    "John Doe",
+                    "1985-05-20"
+                ]
+            ]
+        },
+        "Table2": {
+            "schema": {
+                "id": "integer",
+                "salary": "real",
+                "surname": "string",
+                "worked": "date"
+            },
+            "rows": [
+                [
+                    1,
+                    13.37,
+                    " Doe",
+                    "1985-05-20"
+                ]
+            ]
+        },
+        "Table3": {
+            "schema": {
+                "id": "integer",
+                "timeline": "dateInvl"
+            },
+            "rows": [
+            ]
+            
+        }
+    }
+}
+
+                        
