@@ -16,6 +16,9 @@ class Table:
 
     def get_rows(self):
         return self.rows
+    
+    def get_schema(self):
+        return self.schema
 
     def search_rows(self, field_name, pattern):
         # Пошук по полю
@@ -249,8 +252,9 @@ class DatabaseApp:
                 row_data[i] = datetime.strptime(row_data[i], "%Y-%m-%d").date()
             elif field_type == "dateInvl":
                 start_date, end_date = row_data[i].split(' - ')
-                row_data[i] = (datetime.strptime(start_date, "%Y-%m-%d").date(),
-                               datetime.strptime(end_date, "%Y-%m-%d").date())
+                date_row = f"{datetime.strptime(start_date, "%Y-%m-%d").date()} - {datetime.strptime(end_date, "%Y-%m-%d").date()}"
+                row_data[i] = date_row
+                #row_data[i] = (datetime.strptime(start_date, "%Y-%m-%d").date(), datetime.strptime(end_date, "%Y-%m-%d").date())
                 print(row_data[i])
             # Інші типи залишаються як string або char
 
@@ -271,7 +275,9 @@ class DatabaseApp:
         
         table = self.database.get_table(table_name)
         rows = table.get_rows()
+        schema = table.get_schema()
         self.table_view.delete(1.0, tk.END)
+        self.table_view.insert(tk.END, f"{schema}\n")
         for row in rows:
             self.table_view.insert(tk.END, f"{row}\n")
 
@@ -288,7 +294,9 @@ class DatabaseApp:
 
         table = self.database.get_table(table_name)
         matched_rows = table.search_rows(field_name, pattern)
+        schema = table.get_schema()
         self.table_view.delete(1.0, tk.END)
+        self.table_view.insert(tk.END, f"{schema}\n")
         for row in matched_rows:
             self.table_view.insert(tk.END, f"{row}\n")
 
