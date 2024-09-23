@@ -113,6 +113,10 @@ class DatabaseApp:
         ttk.Label(main_frame, text="Таблиця:").grid(row=1, column=0, sticky=tk.W)
         self.table_name_entry = ttk.Entry(main_frame)
         self.table_name_entry.grid(row=1, column=1, sticky=(tk.W, tk.E))
+
+        # Кнопка видалення таблиці
+        self.delete_table_button = ttk.Button(main_frame, text="Видалити таблицю", command=self.delete_table)
+        self.delete_table_button.grid(row=1, column=2, sticky=tk.W)
         
         # Поле для введення кількості полів
         ttk.Label(main_frame, text="Кількість полів:").grid(row=2, column=0, sticky=tk.W)
@@ -135,6 +139,14 @@ class DatabaseApp:
         # Кнопка додавання рядка
         self.add_row_button = ttk.Button(main_frame, text="Додати рядок", command=self.add_row)
         self.add_row_button.grid(row=4, column=2, sticky=tk.W)
+
+        # Поле для вводу індексу редагованого рядка
+        ttk.Label(main_frame, text="Індекс рядка:").grid(row=10, column=0, sticky=tk.W)
+        self.row_index_entry = ttk.Entry(main_frame)
+        self.row_index_entry.grid(row=10, column=1, sticky=(tk.W, tk.E))
+        # Кнопка редагування рядка
+        self.edit_row_button = ttk.Button(main_frame, text="Редагувати рядок", command=self.edit_row)
+        self.edit_row_button.grid(row=11, column=1)
         
         # Поле для перегляду рядків таблиці
         self.table_view = tk.Text(main_frame, height=10, width=100)
@@ -324,6 +336,73 @@ class DatabaseApp:
         filename = f"{self.database.name}.json"
         self.database.save_to_file(filename)
         messagebox.showinfo("Успіх", f"База даних збережена у файл '{filename}'")
+
+    def edit_row(self):
+        if not self.database:
+            messagebox.showerror("Помилка", "Спочатку створіть базу даних")
+            return
+
+        table_name = self.table_name_entry.get()
+        if not table_name:
+            messagebox.showerror("Помилка", "Введіть назву таблиці")
+            return
+
+        try:
+            row_index = int(self.row_index_entry.get())
+            table = self.database.get_table(table_name)
+
+            if 0 <= row_index < len(table.rows):
+                # Отримуємо нові дані для рядка
+                new_data = self.row_entry.get().split(';')
+                if len(new_data) != len(table.schema):
+                    messagebox.showerror("Помилка", "Кількість значень не відповідає кількості полів")
+                    return
+                
+                # Приведення типів
+                for i, (key, field_type) in enumerate(table.schema.items()):
+                    if field_type == "integer":
+                        new_data[i] = int(new_data[i])
+                    elif field_type == "real":
+                        new_data[i] = float(new_data[i])
+                    elif field_type == "date":
+                        date = f"{datetime.strptime(new_data[i], "%Y-%m-%d").date()}"
+                        new_data[i] = date
+                        #row_data[i] = datetime.strptime(row_data[i], "%Y-%m-%d").date()
+                    elif field_type == "dateInvl":
+                        start_date, end_date = new_data[i].split(' - ')
+                        date_row = f"{datetime.strptime(start_date, "%Y-%m-%d").date()} - {datetime.strptime(end_date, "%Y-%m-%d").date()}"
+                        new_data[i] = date_row
+                        #row_data[i] = (datetime.strptime(start_date, "%Y-%m-%d").date(), datetime.strptime(end_date, "%Y-%m-%d").date())
+                        #print(row_data[i])
+
+                # Оновлюємо рядок
+                table.edit_row(row_index, new_data)
+                self.show_rows()
+
+                # Очищаємо поле вводу
+                self.row_entry.delete(0, tk.END)
+                self.row_index_entry.delete(0, tk.END)
+                messagebox.showinfo("Успіх", f"Рядок {row_index} відредаговано")
+            else:
+                messagebox.showerror("Помилка", "Неправильний індекс рядка")
+        except ValueError:
+            messagebox.showerror("Помилка", "Будь ласка, введіть коректний індекс")
+    def delete_table(self):
+        if not self.database:
+            messagebox.showerror("Помилка", "Спочатку створіть базу даних")
+            return
+
+        table_name = self.table_name_entry.get()
+        if not table_name:
+            messagebox.showerror("Помилка", "Введіть назву таблиці для видалення")
+            return
+
+        try:
+            self.database.delete_table(table_name)
+            messagebox.showinfo("Успіх", f"Таблиця '{table_name}' видалена")
+        except ValueError as e:
+            messagebox.showerror("Помилка", str(e))
+
 
 if __name__ == "__main__":
     root = tk.Tk()
