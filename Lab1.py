@@ -28,6 +28,13 @@ class Table:
             if pattern in str(row[field_index]):
                 matched_rows.append(row)
         return matched_rows
+    
+    def edit_row(self, row_index, new_row_data):
+        if len(new_row_data) != len(self.schema):
+            raise ValueError("Кількість значень не відповідає кількості полів")
+        if row_index < 0 or row_index >= len(self.rows):
+            raise ValueError("Невірний індекс рядка")
+        self.rows[row_index] = new_row_data
 
 class Database:
     def __init__(self, name):
@@ -43,6 +50,11 @@ class Database:
         if table_name not in self.tables:
             raise ValueError(f"Таблиця '{table_name}' не знайдена")
         return self.tables[table_name]
+    
+    def delete_table(self, table_name):
+        if table_name not in self.tables:
+            raise ValueError(f"Таблиця '{table_name}' не існує")
+        del self.tables[table_name]
 
     def save_to_file(self, filename):
         data = {
@@ -125,7 +137,7 @@ class DatabaseApp:
         self.add_row_button.grid(row=4, column=2, sticky=tk.W)
         
         # Поле для перегляду рядків таблиці
-        self.table_view = tk.Text(main_frame, height=10, width=50)
+        self.table_view = tk.Text(main_frame, height=10, width=100)
         self.table_view.grid(row=5, column=0, columnspan=3, sticky=(tk.W, tk.E))
         
         # Поле для пошуку за шаблоном
@@ -249,14 +261,15 @@ class DatabaseApp:
             elif field_type == "real":
                 row_data[i] = float(row_data[i])
             elif field_type == "date":
-                row_data[i] = datetime.strptime(row_data[i], "%Y-%m-%d").date()
+                date = f"{datetime.strptime(row_data[i], "%Y-%m-%d").date()}"
+                row_data[i] = date
+                #row_data[i] = datetime.strptime(row_data[i], "%Y-%m-%d").date()
             elif field_type == "dateInvl":
                 start_date, end_date = row_data[i].split(' - ')
                 date_row = f"{datetime.strptime(start_date, "%Y-%m-%d").date()} - {datetime.strptime(end_date, "%Y-%m-%d").date()}"
                 row_data[i] = date_row
                 #row_data[i] = (datetime.strptime(start_date, "%Y-%m-%d").date(), datetime.strptime(end_date, "%Y-%m-%d").date())
-                print(row_data[i])
-            # Інші типи залишаються як string або char
+                print(row_data[i])        
 
         try:
             table.add_row(row_data)
@@ -278,8 +291,10 @@ class DatabaseApp:
         schema = table.get_schema()
         self.table_view.delete(1.0, tk.END)
         self.table_view.insert(tk.END, f"{schema}\n")
+        i = 1
         for row in rows:
-            self.table_view.insert(tk.END, f"{row}\n")
+            self.table_view.insert(tk.END, f"{i}. {row}\n")
+            i += 1
 
     def search(self):
         if not self.database:
@@ -297,8 +312,10 @@ class DatabaseApp:
         schema = table.get_schema()
         self.table_view.delete(1.0, tk.END)
         self.table_view.insert(tk.END, f"{schema}\n")
+        i = 1
         for row in matched_rows:
-            self.table_view.insert(tk.END, f"{row}\n")
+            self.table_view.insert(tk.END, f"{i}. {row}\n")
+            i+=1
 
     def save_database(self):
         if not self.database:
