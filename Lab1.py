@@ -6,7 +6,7 @@ import json
 class Table:
     def __init__(self, name, schema):
         self.name = name
-        self.schema = schema  # Схема таблиці: {назва_поля: тип}
+        self.schema = schema 
         self.rows = []
 
     def add_row(self, row_data):
@@ -21,7 +21,6 @@ class Table:
         return self.schema
 
     def search_rows(self, field_name, pattern):
-        # Пошук по полю
         field_index = list(self.schema.keys()).index(field_name)
         matched_rows = []
         for row in self.rows:
@@ -96,7 +95,7 @@ class DatabaseApp:
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
-        # Поле для вводу назви бази даних
+        # Поле для назви бази даних
         ttk.Label(main_frame, text="Назва бази даних:").grid(row=0, column=0, sticky=tk.W)
         self.db_name_entry = ttk.Entry(main_frame)
         self.db_name_entry.grid(row=0, column=1, sticky=(tk.W, tk.E))
@@ -109,7 +108,7 @@ class DatabaseApp:
         self.load_db_button = ttk.Button(main_frame, text="Завантажити базу", command=self.load_database)
         self.load_db_button.grid(row=0, column=3, sticky=tk.W)
         
-        # Поле для вибору таблиці
+        # Поле для назви таблиці
         ttk.Label(main_frame, text="Таблиця:").grid(row=1, column=0, sticky=tk.W)
         self.table_name_entry = ttk.Entry(main_frame)
         self.table_name_entry.grid(row=1, column=1, sticky=(tk.W, tk.E))
@@ -127,7 +126,7 @@ class DatabaseApp:
         self.add_fields_button = ttk.Button(main_frame, text="Додати поля", command=self.add_fields)
         self.add_fields_button.grid(row=2, column=2, sticky=tk.W)
 
-        # Фрейм для динамічного додавання полів
+        #додавання полів
         self.fields_frame = ttk.Frame(main_frame)
         self.fields_frame.grid(row=3, column=0, columnspan=3, sticky=(tk.W, tk.E))
         
@@ -249,8 +248,9 @@ class DatabaseApp:
             messagebox.showerror("Помилка", str(e))
 
     def add_row(self):
+        helper = False
         if not self.database:
-            messagebox.showerror("Помилка", "Спочатку створіть базу даних")
+            messagebox.showerror("Помилка", "Спочатку створіть або завантажте базу даних")
             return
         
         table_name = self.table_name_entry.get()
@@ -260,32 +260,50 @@ class DatabaseApp:
 
         row_data = self.row_entry.get().split(';')
         table = self.database.get_table(table_name)
+        #print(table.schema + "\n+++++++++++++++++++++++++++++++++++++++++++++++")
 
-        # Перевірка кількості введених значень
         if len(row_data) != len(table.schema):
-            messagebox.showerror("Помилка", "Кількість значень не відповідає кількості полів")
+            print(f"Schema: {len(table.schema)} Data: {len(row_data)}>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+            messagebox.showerror("Помилка", "1ількість значень не відповідає кількості полів")
             return
         
         # Приведення типів
         for i, (key, field_type) in enumerate(table.schema.items()):
             if field_type == "integer":
-                row_data[i] = int(row_data[i])
+                try:
+                    row_data[i] = int(row_data[i])
+                except ValueError as e:
+                    helper = True
+                    messagebox.showerror("Помилка", "Невірний формат")
             elif field_type == "real":
-                row_data[i] = float(row_data[i])
+                try:
+                    row_data[i] = float(row_data[i])
+                except ValueError as e:
+                    helper = True
+                    messagebox.showerror("Помилка", "Невірний формат")
             elif field_type == "date":
-                date = f"{datetime.strptime(row_data[i], "%Y-%m-%d").date()}"
-                row_data[i] = date
-                #row_data[i] = datetime.strptime(row_data[i], "%Y-%m-%d").date()
+                try:
+                    date = f"{datetime.strptime(row_data[i], "%Y-%m-%d").date()}"
+                    row_data[i] = date
+                    #row_data[i] = datetime.strptime(row_data[i], "%Y-%m-%d").date()
+                except ValueError as e:
+                    helper = True
+                    messagebox.showerror("Помилка", "Невірний формат")
             elif field_type == "dateInvl":
-                start_date, end_date = row_data[i].split(' - ')
-                date_row = f"{datetime.strptime(start_date, "%Y-%m-%d").date()} - {datetime.strptime(end_date, "%Y-%m-%d").date()}"
-                row_data[i] = date_row
-                #row_data[i] = (datetime.strptime(start_date, "%Y-%m-%d").date(), datetime.strptime(end_date, "%Y-%m-%d").date())
-                print(row_data[i])        
+                try:
+                    start_date, end_date = row_data[i].split(' - ')
+                    date_row = f"{datetime.strptime(start_date, "%Y-%m-%d").date()} - {datetime.strptime(end_date, "%Y-%m-%d").date()}"
+                    row_data[i] = date_row
+                    #row_data[i] = (datetime.strptime(start_date, "%Y-%m-%d").date(), datetime.strptime(end_date, "%Y-%m-%d").date())
+                    print(row_data[i])
+                except ValueError as e:
+                    helper = True
+                    messagebox.showerror("Помилка", "Невірний формат")       
 
         try:
-            table.add_row(row_data)
-            messagebox.showinfo("Успіх", "Рядок додано")
+            if not helper:
+                table.add_row(row_data)
+                messagebox.showinfo("Успіх", "Рядок додано")
         except ValueError as e:
             messagebox.showerror("Помилка", str(e))
 
@@ -301,9 +319,10 @@ class DatabaseApp:
         table = self.database.get_table(table_name)
         rows = table.get_rows()
         schema = table.get_schema()
+        print(schema)
         self.table_view.delete(1.0, tk.END)
         self.table_view.insert(tk.END, f"{schema}\n")
-        i = 1
+        i = 0
         for row in rows:
             self.table_view.insert(tk.END, f"{i}. {row}\n")
             i += 1
@@ -324,7 +343,7 @@ class DatabaseApp:
         schema = table.get_schema()
         self.table_view.delete(1.0, tk.END)
         self.table_view.insert(tk.END, f"{schema}\n")
-        i = 1
+        i = 0
         for row in matched_rows:
             self.table_view.insert(tk.END, f"{i}. {row}\n")
             i+=1
@@ -352,7 +371,6 @@ class DatabaseApp:
             table = self.database.get_table(table_name)
 
             if 0 <= row_index < len(table.rows):
-                # Отримуємо нові дані для рядка
                 new_data = self.row_entry.get().split(';')
                 if len(new_data) != len(table.schema):
                     messagebox.showerror("Помилка", "Кількість значень не відповідає кількості полів")
@@ -379,7 +397,6 @@ class DatabaseApp:
                 table.edit_row(row_index, new_data)
                 self.show_rows()
 
-                # Очищаємо поле вводу
                 self.row_entry.delete(0, tk.END)
                 self.row_index_entry.delete(0, tk.END)
                 messagebox.showinfo("Успіх", f"Рядок {row_index} відредаговано")
